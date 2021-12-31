@@ -1,0 +1,210 @@
+#:import NoTransition kivy.uix.screenmanager.NoTransition
+#:import FallOutTransition kivy.uix.screenmanager.FallOutTransition
+#:import SwapTransition kivy.uix.screenmanager.SwapTransition
+#:import FadeTransition kivy.uix.screenmanager.FadeTransition
+
+MyMDBoxLayout:
+    ScreenManager:
+        id: scrmanager
+        transition: FadeTransition()
+        MDScreen:
+            id: blackscreen
+            name: 'blackscreen'
+            MDBoxLayout:
+                md_bg_color: 0, 0, 0, 1
+                Button:
+                    background_color: (1, 0, 0, 0)
+                    background_normal: ''
+                    on_press: scrmanager.current = 'videoscreen'
+        MDScreen:
+            id: videoscreen
+            name: 'videoscreen'
+            on_pre_enter:
+                video_player.state = 'play'
+                videobox.start_timer()
+            on_leave:
+                video_player.state = 'stop'
+                videobox.stop_timer()
+            VideoBoxLayout:
+                id: videobox
+                md_bg_color: 0, 0, 0, 1
+                FloatLayout:
+                    Video:
+                        id: video_player
+                        name: 'video_player'
+                        source: 'Sample.mp4'
+                        preview: 'videohintergrund.png'
+                        options: {'allow_stretch': True}
+                        #fullscreen: True
+                        #state: 'play'
+                        size_hint: 1, 1
+                        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+                    Button:
+                        background_color: (1, 0, 0, 0)
+                        background_normal: ''
+                        on_press:
+                            scrmanager.current = 'infoscreen'
+        MDScreen:
+            id: infoscreen
+            name: 'infoscreen'
+            on_pre_enter:
+                infoscreenlayout.start_timer()
+            on_leave:
+                infoscreenlayout.stop_timer()
+            InfoBoxLayout:
+                id: infoscreenlayout
+                md_bg_color: 0, 0, 0, 1
+                orientation: 'vertical'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
+                    MDLabel:
+                        id: 'infolabel'
+                        halign: 'center'
+                        valign: 'bottom'
+                        text_size: self.size
+                        text: infoscreenlayout.title
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                        font_size: '150sp'
+                        #md_bg_color: 0, 1, 0, 0.5
+                    MDBoxLayout:
+                MDBoxLayout:
+                    MDLabel:
+                        id: 'infolabel'
+                        halign: 'left'
+                        valign: 'center'
+                        size_hint_x: 0.5
+                        text_size: (self.width * 0.8, None)
+                        text: infoscreenlayout.info_text
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/BRI293'
+                        font_size: '40sp'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
+
+            MDFillRoundFlatButton:
+                text: '     Verstanden     '
+                pos_hint: {'center_x': 0.5, 'center_y': 0.2}
+                md_bg_color: 1, 153/255, 0, 1
+                text_color: 0.001, 0, 0, 1
+                font_size: "31sp"
+                font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                on_release:
+                    scrmanager.current = 'paymentscreen'
+        MDScreen:
+            id: paymentscreen
+            name: 'paymentscreen'
+            on_pre_enter: paymentbox.start_clock()
+            on_leave: paymentbox.stop_clock()
+            canvas.before:
+                Color:
+                    rgba: (0,0,0,1)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            canvas:
+                Color:
+                    rgba: 1, 153/255, 0, 1
+                Line:
+                    points: (self.width*0.5, self.height*0.1, self.width*0.5, self.height*0.9)
+                    width: 3
+            PaymentBoxLayout:
+                id: paymentbox
+                MDBoxLayout:
+                    #md_bg_color: 0, 0, 0, 0.1
+                    FloatLayout:
+                        canvas:
+                            Color:
+                                rgba: 1, 153/255, 0, 1
+                            Line:
+                                width: 3
+                                rectangle: (self.width*0.265, self.height*0.275, dp(450), dp(450))
+                        MDBoxLayout:
+                            id: border_box
+                            size_hint: None, None
+                            size: dp(450), dp(450)
+                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                            #md_bg_color: 0, 0, 0, 0.8
+                            MDLabel:
+                                size_hint: 1, 1
+                                halign: 'center'
+                                valign: 'center'
+                                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                                text: paymentbox.information_label
+                                color: 1, 153/255, 0, 1
+                                font_size: "31sp"
+                                font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                        FitImage:
+                            id: image_id
+                            nocache: True
+                            source: paymentbox.image_path
+                            size_hint: None, None
+                            size: dp(400), dp(400)
+                            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    #md_bg_color: 0, 0, 0, 0.1
+                    MDBoxLayout:
+                        #md_bg_color: 0, 0, 0, 0.1
+                        orientation: 'vertical'
+                        size_hint: 1, 1
+                        MDLabel:
+                            id: headline_exchangerate_label
+                            halign: 'center'
+                            valign: 'bottom'
+                            size_hint_x: 0.8
+                            #size_hint_y: 2
+                            text_size: self.size
+                            text: 'Wechselkurs:'
+                            color: 1, 153/255, 0, 1
+                            font_name: 'fonts/BRI293'
+                            font_size: '50sp'
+                        MDLabel:
+                            id: 'pricelabel'
+                            halign: 'left'
+                            valign: 'top'
+                            size_hint_x: 1.4
+                            size_hint_y: 1
+                            text_size: (self.width * 0.5, self.height * 0.8)
+                            text: paymentbox.price
+                            color: 1, 153/255, 0, 1
+                            font_size: "29sp"
+                            font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        #md_bg_color: 0, 0, 0, 0.1
+                        size_hint: 1, 1
+                        MDLabel:
+                            id: headline_inserted_label
+                            halign: 'center'
+                            valign: 'bottom'
+                            size_hint_x: 0.95
+                            #size_hint_y: 2
+                            text_size: self.size
+                            text: 'Bargeld eingezahlt:'
+                            color: 1, 153/255, 0, 1
+                            font_name: 'fonts/BRI293'
+                            font_size: '50sp'
+                        MDLabel:
+                            id: inserted_label
+                            halign: 'left'
+                            valign: 'top'
+                            size_hint_x: 1.4
+                            size_hint_y: 1
+                            text_size: (self.width * 0.5, self.height * 0.8)
+                            text: paymentbox.inserted_value
+                            color: 1, 153/255, 0, 1
+                            font_size: "29sp"
+                            font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
+                    MDBoxLayout:
+                        #md_bg_color: 0, 0, 0, 0.11
+            MDFillRoundFlatButton:
+                text: '     Auszahlen     '
+                pos_hint: {'center_x': 0.75, 'center_y': 0.2}
+                md_bg_color: 1, 153/255, 0, 1
+                text_color: 0.001, 0, 0, 1
+                font_size: "31sp"
+                font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                on_release:
+                    paymentbox.start_payment_process()
