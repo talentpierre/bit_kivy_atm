@@ -2,40 +2,37 @@ import os
 os.environ['KIVY_VIDEO'] = 'ffpyplayer'
 os.environ['KIVY_AUDIO'] = 'ffpyplayer'
 
-import kivy
+import logging
 import pyautogui
 import pyautogui as pyautogui
 import qrcode
 import requests
 import time
 
+from datetime import datetime
 from functools import partial
 
+import kivy
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
-from kivy.properties import StringProperty, ObjectProperty
-from kivy.uix.video import Video
 from kivy.lang import Builder
+from kivy.logger import Logger
+from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix import video
+from kivy.uix.video import Video
 
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 
 from credentials import API_ADMIN_KEY, API_INVOICE_KEY, API_URL
+from nv9biller import Biller
 
 #Window.size = (1920, 1080)
 #Window.fullscreen = True
 #Window.borderless = '0'
 Window.top = int((pyautogui.size().height - Window.height)) / 2
 Window.left = int((pyautogui.size().width - Window.width)) / 2
-
-
-
-class MyMDBoxLayout(MDBoxLayout):
-
-    def __init__(self, **kwargs):
-        super(MyMDBoxLayout, self).__init__()
 
 
 class VideoBoxLayout(MDBoxLayout):
@@ -47,24 +44,27 @@ class VideoBoxLayout(MDBoxLayout):
         super(VideoBoxLayout, self).__init__(**kwargs)
         self.button_color = 1, 0, 0, 0
         self.action = time.time()
+        Logger.debug(f"VideoBoxLayout: instance of VideoBoxLayout initalized - {datetime.now()}")
 
     def screensaver(self, _):
         '''It checks if the screensaver should be active.'''
-        print(time.time())
+        Logger.debug(f"VideoBoxLayout: screensaver check - {datetime.now()}")
         if time.time() > self.action + 30:
-            print('screensaver videobox')
             MDApp.get_running_app().root.ids.scrmanager.current = 'blackscreen'
             self.start_timer_event.cancel()
+            Logger.info(f"VideoBoxLayout: screensaver videobox on - {datetime.now()}")
 
     def start_timer(self):
         '''A timer which calls the screensaver method every second.'''
         self.start_timer_event = Clock.schedule_interval(self.screensaver, 1)
         self.action = time.time()
+        Logger.debug(f"VideoBoxLayout: start_timer called - {datetime.now()}")
 
     def stop_timer(self):
         '''A function that cancels the start_timer because it's not necessary anymore.'''
         self.start_timer_event.cancel()
         self.action = time.time()
+        Logger.debug(f"VideoBoxLayout: stop_timer called - {datetime.now()}")
 
 
 class InfoBoxLayout(MDBoxLayout):
@@ -80,24 +80,27 @@ class InfoBoxLayout(MDBoxLayout):
             f"Aktuell kann kein Bargeld ausgezahlt werden, sollte die Zahlung fehlschlagen."
 
         self.title = 'Achtung'
+        Logger.debug(f"InfoBoxLayout: instance of InfoBoxLayout initialized - {datetime.now()}")
 
     def screensaver(self, _):
         '''It checks if the screensaver should be active.'''
-        print(f"screensaver time: {round(time.time())}")
+        Logger.debug(f"InfoBoxLayout: screensaver check - {datetime.now()}")
         if time.time() > self.action + 30:
-            print('screensaver infobox')
             MDApp.get_running_app().root.ids.scrmanager.current = 'blackscreen'
             self.start_timer_event.cancel()
+            Logger.info(f"InfoBoxLayout: screensaver videobox on - {datetime.now()}")
 
     def start_timer(self):
         '''A timer which calls the screensaver method every second.'''
         self.start_timer_event = Clock.schedule_interval(self.screensaver, 1)
         self.action = time.time()
+        Logger.debug(f"InfoBoxLayout: start_timer called - {datetime.now()}")
 
     def stop_timer(self):
         '''A function that cancels the start_timer because it's not necessary anymore.'''
         self.start_timer_event.cancel()
         self.action = time.time()
+        Logger.debug(f"InfoBoxLayout: stop_timer called - {datetime.now()}")
 
 
 class PaymentBoxLayout(MDBoxLayout):
@@ -122,15 +125,35 @@ class PaymentBoxLayout(MDBoxLayout):
 
         self.set_prices()
 
+        self.biller = Biller('/dev/ttyACM0')
+
     def set_prices(self):
         '''It gets the bitcoin price and sets the price variables.'''
         self.btcprice = float(requests.get('https://api.opennode.co/v1/rates').json()['data']['BTCEUR']['EUR'])
         self.satprice = self.btcprice / 100_000_000
         self.price = f"{round(self.satprice * self.fee * 10_000, 2):.2f} Cent/100Sats \n{round(self.btcprice * self.fee, 2):.2f} Euro/bitcoin"
 
-    def test_fiat_change(self, _):
-        '''A test method for simulating fiat input.'''
-        self.fiat = 2.00
+#    def test_fiat_change(self, _):
+#        '''A test method for simulating fiat input.'''
+#        self.fiat = 2.00
+
+    def update_fiat_input(self, _):
+        '''The method is called by a timer to update the fiat input by the user.'''
+        events = self.biller.poll()
+        for event in events:
+            print(str(event))
+            if('Credit -> 5.00' in str(event)):
+                print('5 Euro')
+                self.fiat += 5
+            if('Credit ->10.00' in str(event)):
+                print('10 Euro')
+                self.fiat += 10
+            if('Credit -> 20.00' in str(event)):
+                print('20 Euro')
+                self.fiat += 20
+            if('Credit -> 50.00' in str(event)):
+                print('50 Euro')
+                self.fiat += 50
 
     def update_price(self, _):
         '''The method is called by a timer to setup the price.'''
@@ -144,13 +167,19 @@ class PaymentBoxLayout(MDBoxLayout):
         '''The method starts several update timer.'''
         self.price_event = Clock.schedule_interval(self.update_price, 60)
         self.inserted_value_event = Clock.schedule_interval(self.update_inserted_value, 1)
-        self.test_fiat_change_event = Clock.schedule_once(self.test_fiat_change, 15)
+        self.fiat_input_event = Clock.schedule_interval(self.update_fiat_input, 1)
+        self.setup_cash_acceptor()
         self.image_path = ''
+
+#        for testing if cash acceptor is not available
+#        self.test_fiat_change_event = Clock.schedule_once(self.test_fiat_change, 15)
 
     def stop_clock(self):
         '''The method stops several update timer.'''
         self.price_event.cancel()
         self.inserted_value_event.cancel()
+        self.fiat_input_event.cancel()
+        self.disable_cash_acceptor()
 
     def start_payment_process(self):
         '''The method initiates the payment process and
@@ -218,6 +247,28 @@ class PaymentBoxLayout(MDBoxLayout):
         qr.add_data(lnurl.upper())
         img = qr.make_image(back_color=(0, 0, 0), fill_color=(255, 153, 0))
         img.save(f"qrcodes/{lnurl[-10:]}.png")
+
+
+    def setup_cash_acceptor(self):
+        '''The method initialises the parameters of the cash acceptor.'''
+        print(f"{time.time()} - biller initialisation")
+        print(f"SN: {self.biller.serial:08X}")
+
+        self.biller.channels_set(self.biller.CH_ALL)
+        self.biller.display_enable()
+        self.biller.enable()
+
+        print(f"{time.time()} - biller initialisation done")
+
+    def disable_cash_acceptor(self):
+        '''The method disables the cash acceptor and resets the parameters.'''
+        print(f"{time.time()} - disabling biller")
+
+        self.biller.disable()
+        self.biller.display_disable()
+        self.biller.channels_set(None)
+
+        print(f"{time.time()} - disabling biller done")
 
 
 class MyApp(MDApp):

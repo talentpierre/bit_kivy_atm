@@ -3,7 +3,7 @@
 #:import SwapTransition kivy.uix.screenmanager.SwapTransition
 #:import FadeTransition kivy.uix.screenmanager.FadeTransition
 
-MyMDBoxLayout:
+MDBoxLayout:
     ScreenManager:
         id: scrmanager
         transition: FadeTransition()
@@ -208,3 +208,12 @@ MyMDBoxLayout:
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
                     paymentbox.start_payment_process()
+            MDFillRoundFlatButton:
+                text: '     Exit     '
+                pos_hint: {'center_x': 0.25, 'center_y': 0.2}
+                md_bg_color: 1, 153/255, 0, 1
+                text_color: 0.001, 0, 0, 1
+                font_size: "31sp"
+                font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                on_release:
+                    scrmanager.current = 'blackscreen'

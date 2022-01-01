@@ -8,3 +8,6 @@ credentials.py
 #python stuff
 __pycache__/
 .idea
+
+#other repos
+nv9biller/
