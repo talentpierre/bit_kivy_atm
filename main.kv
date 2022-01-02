@@ -17,6 +17,39 @@ MDBoxLayout:
                     background_normal: ''
                     on_press: scrmanager.current = 'videoscreen'
         MDScreen:
+            id: supportscreen
+            name: 'supportscreen'
+            MDBoxLayout:
+                id: supportscreenlayout
+                md_bg_color: 0, 0, 0, 1
+                orientation: 'vertical'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
+                    MDLabel:
+                        id: supportheadinglabel
+                        halign: 'center'
+                        valign: 'bottom'
+                        text_size: self.size
+                        text: 'Achtung'
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                        font_size: '150sp'
+                        #md_bg_color: 0, 1, 0, 0.5
+                    MDBoxLayout:
+                MDBoxLayout:
+                    MDLabel:
+                        id: supporttextlabel
+                        halign: 'left'
+                        valign: 'center'
+                        size_hint_x: 0.5
+                        text_size: (self.width * 0.8, None)
+                        text: 'Etwas ist fehlgeschlagen.\nBitte kontaktieren Sie das Service-Personal.'
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/BRI293'
+                        font_size: '40sp'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
+        MDScreen:
             id: videoscreen
             name: 'videoscreen'
             on_pre_enter:

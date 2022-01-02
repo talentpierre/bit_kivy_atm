@@ -58,13 +58,13 @@ class VideoBoxLayout(MDBoxLayout):
         '''A timer which calls the screensaver method every second.'''
         self.start_timer_event = Clock.schedule_interval(self.screensaver, 1)
         self.action = time.time()
-        Logger.debug(f"VideoBoxLayout: start_timer called - {datetime.now()}")
+        Logger.debug(f"VideoBoxLayout: start_timer - {datetime.now()}")
 
     def stop_timer(self):
         '''A function that cancels the start_timer because it's not necessary anymore.'''
         self.start_timer_event.cancel()
         self.action = time.time()
-        Logger.debug(f"VideoBoxLayout: stop_timer called - {datetime.now()}")
+        Logger.debug(f"VideoBoxLayout: stop_timer - {datetime.now()}")
 
 
 class InfoBoxLayout(MDBoxLayout):
@@ -88,19 +88,19 @@ class InfoBoxLayout(MDBoxLayout):
         if time.time() > self.action + 30:
             MDApp.get_running_app().root.ids.scrmanager.current = 'blackscreen'
             self.start_timer_event.cancel()
-            Logger.info(f"InfoBoxLayout: screensaver videobox on - {datetime.now()}")
+            Logger.info(f"InfoBoxLayout: screensaver infobox on - {datetime.now()}")
 
     def start_timer(self):
         '''A timer which calls the screensaver method every second.'''
         self.start_timer_event = Clock.schedule_interval(self.screensaver, 1)
         self.action = time.time()
-        Logger.debug(f"InfoBoxLayout: start_timer called - {datetime.now()}")
+        Logger.debug(f"InfoBoxLayout: start_timer - {datetime.now()}")
 
     def stop_timer(self):
         '''A function that cancels the start_timer because it's not necessary anymore.'''
         self.start_timer_event.cancel()
         self.action = time.time()
-        Logger.debug(f"InfoBoxLayout: stop_timer called - {datetime.now()}")
+        Logger.debug(f"InfoBoxLayout: stop_timer - {datetime.now()}")
 
 
 class PaymentBoxLayout(MDBoxLayout):
@@ -123,15 +123,22 @@ class PaymentBoxLayout(MDBoxLayout):
         self.price = ''
         self.inserted_value = f"{self.fiat:.2f} Euro"
 
-        self.set_prices()
+        Clock.schedule_once(self.set_prices, 5)
 
         self.biller = Biller('/dev/ttyACM0')
+        Logger.debug(f"PaymentBoxLayout: instance of PaymentBoxLayout initialized - {datetime.now()}")
 
-    def set_prices(self):
+    def set_prices(self, _):
         '''It gets the bitcoin price and sets the price variables.'''
-        self.btcprice = float(requests.get('https://api.opennode.co/v1/rates').json()['data']['BTCEUR']['EUR'])
-        self.satprice = self.btcprice / 100_000_000
-        self.price = f"{round(self.satprice * self.fee * 10_000, 2):.2f} Cent/100Sats \n{round(self.btcprice * self.fee, 2):.2f} Euro/bitcoin"
+        try:
+            self.btcprice = float(requests.get('https://api.opennode.co/v1/rates').json()['data']['BTCEUR']['EUR'])
+        except:
+            MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
+            Logger.critical(f"PaymentBoxLayout: set_prices - exchange rate error - {datetime.now()}")
+        else:
+            self.satprice = self.btcprice / 100_000_000
+            self.price = f"{round(self.satprice * self.fee * 10_000, 2):.2f} Cent/100Sats \n{round(self.btcprice * self.fee, 2):.2f} Euro/bitcoin"
+            Logger.debug(f"PaymentBoxLayout: set_prices - {datetime.now()}")
 
 #    def test_fiat_change(self, _):
 #        '''A test method for simulating fiat input.'''
@@ -141,35 +148,37 @@ class PaymentBoxLayout(MDBoxLayout):
         '''The method is called by a timer to update the fiat input by the user.'''
         events = self.biller.poll()
         for event in events:
+            Logger.debug(f"PaymentBoxLayout: update_fiat_input - event {str(event)} - {datetime.now()}")
             print(str(event))
             if('Credit -> 5.00' in str(event)):
-                print('5 Euro')
                 self.fiat += 5
+                Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
             if('Credit ->10.00' in str(event)):
-                print('10 Euro')
                 self.fiat += 10
+                Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat  {self.fiat} - {datetime.now()}")
             if('Credit -> 20.00' in str(event)):
-                print('20 Euro')
                 self.fiat += 20
+                Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
             if('Credit -> 50.00' in str(event)):
-                print('50 Euro')
                 self.fiat += 50
+                Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
 
     def update_price(self, _):
         '''The method is called by a timer to setup the price.'''
         self.set_prices()
 
-    def update_inserted_value(self, _):
+    def update_inserted_value_label(self, _):
         '''The method is called by a timer to update the inserted_value label.'''
         self.inserted_value = f"{self.fiat:.2f} Euro"
 
     def start_clock(self):
         '''The method starts several update timer.'''
         self.price_event = Clock.schedule_interval(self.update_price, 60)
-        self.inserted_value_event = Clock.schedule_interval(self.update_inserted_value, 1)
+        self.inserted_value_event = Clock.schedule_interval(self.update_inserted_value_label, 1)
         self.fiat_input_event = Clock.schedule_interval(self.update_fiat_input, 1)
         self.setup_cash_acceptor()
         self.image_path = ''
+        Logger.debug(f"PaymentBoxLayout: start_clock - {datetime.now()}")
 
 #        for testing if cash acceptor is not available
 #        self.test_fiat_change_event = Clock.schedule_once(self.test_fiat_change, 15)
@@ -180,21 +189,28 @@ class PaymentBoxLayout(MDBoxLayout):
         self.inserted_value_event.cancel()
         self.fiat_input_event.cancel()
         self.disable_cash_acceptor()
+        Logger.debug(f"PaymentBoxLayout: stop_clock - {datetime.now()}")
 
     def start_payment_process(self):
         '''The method initiates the payment process and
         starts a timer which checks the payment status.
         '''
+        Logger.debug(f"PaymentBoxLayout: start_payment_process - fiat {self.fiat} - {datetime.now()}")
         if self.fiat:
+            Logger.info(f"PaymentBoxLayout: start_payment_process - withdraw initiated - fiat {self.fiat} - {datetime.now()}")
             fiat = self.fiat
             self.fiat = 0
             amount = int(round(fiat / self.satprice))
+            Logger.info(f"PaymentBoxLayout: start_payment_process - withdraw initiated - sats {amount} - {datetime.now()}")
             title = 'bit_lightning_atm'
-            withdraw_information = self.get_new_payreq_information(amount, title)
-            lnurl = withdraw_information['lnurl']
-            withdraw_id = withdraw_information['id']
-            self.show_qr_code(lnurl)
-            self.check_payment_event = Clock.schedule_interval(partial(self.withdraw_used, withdraw_id), 1)
+            try:
+                lnurl, withdraw_id = self.get_new_payreq_information(amount, title)
+            except:
+                MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
+                Logger.critical(f"PaymentBoxLayout: start_payment_process - payrequest error - {datetime.now()}")
+            else:
+                self.show_qr_code(lnurl)
+                self.check_payment_event = Clock.schedule_interval(partial(self.withdraw_used, withdraw_id), 1)
 
     def get_new_payreq_information(self, amount, title):
         '''It requests a withdraw link and returns its details.'''
@@ -212,10 +228,12 @@ class PaymentBoxLayout(MDBoxLayout):
             "X-Api-Key": f"{API_ADMIN_KEY}"
         }
         response = requests.request("POST", url, json=payload, headers=headers).json()
-        return response
+        lnurl = response['lnurl']
+        withdraw_id = response['id']
+        return lnurl, withdraw_id
 
-    def withdraw_used(self, withdraw_id, _):
-        '''The method is called by a timer and checks the payment status.'''
+    def get_payment_status(self, withdraw_id):
+        '''It requests the paymentstatus.'''
         url = f"{API_URL}/withdraw/api/v1/links/{withdraw_id}"
         headers = {
             "Content-Type": "application/json",
@@ -223,52 +241,65 @@ class PaymentBoxLayout(MDBoxLayout):
         }
         response = requests.request("GET", url, headers=headers).json()
         was_used = response['used']
-        if was_used:
+        return was_used
+
+    def withdraw_used(self, withdraw_id, _):
+        '''The method is called by a timer and checks the payment status.'''
+        try:
+            was_used = self.get_payment_status(withdraw_id)
+        except:
             self.check_payment_event.cancel()
-            self.stop_clock()
-            MDApp.get_running_app().root.ids.image_id.opacity = 0
-            self.information_label = 'Vielen Dank und \nbis bald.'
-            Clock.schedule_once(self.payment_done, 10)
+            MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
+            Logger.critical(f"PaymentBoxLayout: withdraw_used - payment status error - {datetime.now()}")
+        else:
+            if was_used:
+                self.check_payment_event.cancel()
+                self.stop_clock()
+                MDApp.get_running_app().root.ids.image_id.opacity = 0
+                self.information_label = 'Vielen Dank und \nbis bald.'
+                Clock.schedule_once(self.payment_done, 5)
+                Logger.info(f"PaymentBoxLayout: withdraw_used - withdraw link was used - {datetime.now()}")
 
     def payment_done(self, _):
         '''The method is called after the payment was payed and switches back to the video screen.'''
         MDApp.get_running_app().root.ids.scrmanager.current = 'videoscreen'
         self.information_label = 'Bitte Bargeld \n einzahlen. '
 
+    def get_lnurl_qrcode_img_path(self, lnurl):
+        '''The method creates the img path for the lnurl qrcode.'''
+        return f"qrcodes/{lnurl[-10:]}.png"
+
     def show_qr_code(self, lnurl):
         '''The method presents the lnurl qr code on the payment screen.'''
         self.create_qrcode_img(lnurl)
-        self.image_path = f"qrcodes/{lnurl[-10:]}.png"
+        img_path = self.get_lnurl_qrcode_img_path(lnurl)
+        self.image_path = img_path
         MDApp.get_running_app().root.ids.image_id.opacity = 1
+        Logger.info(f"PaymentBoxLayout: show_qr_code - image_path now {self.image_path} - {datetime.now()}")
 
     def create_qrcode_img(self, lnurl):
         '''The method creates a qr-code and stores the image in the current directory.'''
         qr = qrcode.QRCode()
         qr.add_data(lnurl.upper())
         img = qr.make_image(back_color=(0, 0, 0), fill_color=(255, 153, 0))
-        img.save(f"qrcodes/{lnurl[-10:]}.png")
+        img_path = self.get_lnurl_qrcode_img_path(lnurl)
+        img.save(img_path)
+        Logger.info(f"PaymentBoxLayout: create_qr_code - qr-code created - {datetime.now()}")
 
 
     def setup_cash_acceptor(self):
         '''The method initialises the parameters of the cash acceptor.'''
-        print(f"{time.time()} - biller initialisation")
-        print(f"SN: {self.biller.serial:08X}")
-
         self.biller.channels_set(self.biller.CH_ALL)
         self.biller.display_enable()
         self.biller.enable()
-
-        print(f"{time.time()} - biller initialisation done")
+        Logger.info(f"PaymentBoxLayout: setup_cash_acceptor - SN {self.biller.serial:08X} enabled - {datetime.now()}")
 
     def disable_cash_acceptor(self):
         '''The method disables the cash acceptor and resets the parameters.'''
-        print(f"{time.time()} - disabling biller")
-
         self.biller.disable()
         self.biller.display_disable()
         self.biller.channels_set(None)
-
-        print(f"{time.time()} - disabling biller done")
+        Logger.info(f"PaymentBoxLayout: disable_cash_acceptor - biller disabled - {datetime.now()}")
 
 
 class MyApp(MDApp):
