@@ -85,3 +85,44 @@ cp -r ~/repos/nv9biller/nv9biller ~/repos/bit_kivy_atm/
 cd ~/repos/bit_kivy_atm
 python main.py
 ```
+
+
+## Configuration
+- the ux of kivy is highly dependent on your display
+- this part shows some files you can edit to fit your needs
+
+### Kivy configuration file
+- `~/.kivy/config.ini`
+- in the current setup (LCD monitor, keyboard, mouse) I use the following
+- \# means it's a comment and is not used
+```sh
+[graphics]
+...
+fullscreen = 1
+height = 1080
+width = 1920
+borderless = 1
+allow_screensaver = 0
+...
+[input]
+mouse = mouse
+#%(name)s = probesysfs,provider=hidinput
+mtdev_%(name)s = probesysfs,provider=mtdev
+#hid_%(name)s = probesysfs,provider=hidinput
+...
+```
+### Raspberry Pi boot configuration
+- `/boot/config.txt`
+- most tutorials state that you can add a `lcd_rotate=2` at the top to correct the Raspberry Pi TouchScreen because it's upside down
+- my display also needed this
+```sh
+...
+# uncomment this if your display has a black border of unused pixels visible
+# and your display can output without overscan
+disable_overscan=1
+...
+```
+### Raspberry Pi configuration
+- if you want to use speaker or headphones but your display uses HDMI you can change the audio output
+- open a terminal
+- `sudo raspi-config` --> `System Options` --> `Audio` --> `Headphones`
