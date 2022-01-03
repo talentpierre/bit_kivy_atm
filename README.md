@@ -78,8 +78,17 @@ cp -r ~/repos/nv9biller/nv9biller ~/repos/bit_kivy_atm/
 ```
 ### 8. Configuration
 - copy your media files (video (mp4), click sound(wav/mp3)) into the media file directory
-- modify the `config.py` to match your naming
-- create a `credential.py` and enter your credentials/url --> you can use the `example.credentials.py` as an example
+#### Modify the bit_kivy_atm config
+```sh
+nano ~/repos/bit_kivy_atm/config.py
+```
+#### Enter you credentials
+- create a `credential.py` and enter your credentials/url --> you can use `example.credentials.py`
+```sh
+cd ~/repos/bit_kivy_atm/
+mv example.credentials.py credentials.py
+nano credentials.py
+```
 ### 9. Run the ATM
 ```sh
 cd ~/repos/bit_kivy_atm
