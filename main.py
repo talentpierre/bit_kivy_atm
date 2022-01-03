@@ -1,6 +1,6 @@
 import os
 os.environ['KIVY_VIDEO'] = 'ffpyplayer'
-os.environ['KIVY_AUDIO'] = 'ffpyplayer'
+os.environ['KIVY_AUDIO'] = 'sdl2'
 
 import logging
 import pyautogui
@@ -14,6 +14,7 @@ from functools import partial
 
 import kivy
 from kivy.clock import Clock
+from kivy.core.audio import SoundLoader
 from kivy.core.text import LabelBase
 from kivy.core.window import Window
 from kivy.lang import Builder
@@ -24,8 +25,9 @@ from kivy.uix.video import Video
 
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
+from playsound import playsound
 
-from credentials import API_ADMIN_KEY, API_INVOICE_KEY, API_URL
+import config
 from nv9biller import Biller
 
 #Window.size = (1920, 1080)
@@ -61,7 +63,7 @@ class VideoBoxLayout(MDBoxLayout):
         Logger.debug(f"VideoBoxLayout: start_timer - {datetime.now()}")
 
     def stop_timer(self):
-        '''A function that cancels the start_timer because it's not necessary anymore.'''
+        '''A method that cancels the start_timer because it's not necessary anymore.'''
         self.start_timer_event.cancel()
         self.action = time.time()
         Logger.debug(f"VideoBoxLayout: stop_timer - {datetime.now()}")
@@ -102,6 +104,12 @@ class InfoBoxLayout(MDBoxLayout):
         self.action = time.time()
         Logger.debug(f"InfoBoxLayout: stop_timer - {datetime.now()}")
 
+    def play_click_sound(self):
+        '''The method plays a click sound.'''
+        sound = SoundLoader.load(config.CLICK_SOUND_PATH)
+        if sound:
+            sound.play()
+
 
 class PaymentBoxLayout(MDBoxLayout):
     '''A layout for the information screen.'''
@@ -123,12 +131,18 @@ class PaymentBoxLayout(MDBoxLayout):
         self.price = ''
         self.inserted_value = f"{self.fiat:.2f} Euro"
 
-        Clock.schedule_once(self.set_prices, 5)
+        Clock.schedule_once(self.update_price, 5)
 
         self.biller = Biller('/dev/ttyACM0')
         Logger.debug(f"PaymentBoxLayout: instance of PaymentBoxLayout initialized - {datetime.now()}")
 
-    def set_prices(self, _):
+    def play_click_sound(self):
+        '''The method plays a click sound.'''
+        sound = SoundLoader.load(config.CLICK_SOUND_PATH)
+        if sound:
+            sound.play()
+
+    def set_prices(self):
         '''It gets the bitcoin price and sets the price variables.'''
         try:
             self.btcprice = float(requests.get('https://api.opennode.co/v1/rates').json()['data']['BTCEUR']['EUR'])
@@ -149,7 +163,6 @@ class PaymentBoxLayout(MDBoxLayout):
         events = self.biller.poll()
         for event in events:
             Logger.debug(f"PaymentBoxLayout: update_fiat_input - event {str(event)} - {datetime.now()}")
-            print(str(event))
             if('Credit -> 5.00' in str(event)):
                 self.fiat += 5
                 Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
@@ -214,7 +227,7 @@ class PaymentBoxLayout(MDBoxLayout):
 
     def get_new_payreq_information(self, amount, title):
         '''It requests a withdraw link and returns its details.'''
-        url = f"{API_URL}/withdraw/api/v1/links"
+        url = f"{config.API_URL}/withdraw/api/v1/links"
         payload = {
             "title": title,
             "min_withdrawable": amount,
@@ -225,7 +238,7 @@ class PaymentBoxLayout(MDBoxLayout):
         }
         headers = {
             "Content-Type": "application/json",
-            "X-Api-Key": f"{API_ADMIN_KEY}"
+            "X-Api-Key": f"{config.API_ADMIN_KEY}"
         }
         response = requests.request("POST", url, json=payload, headers=headers).json()
         lnurl = response['lnurl']
@@ -234,10 +247,10 @@ class PaymentBoxLayout(MDBoxLayout):
 
     def get_payment_status(self, withdraw_id):
         '''It requests the paymentstatus.'''
-        url = f"{API_URL}/withdraw/api/v1/links/{withdraw_id}"
+        url = f"{config.API_URL}/withdraw/api/v1/links/{withdraw_id}"
         headers = {
             "Content-Type": "application/json",
-            "X-Api-Key": f"{API_INVOICE_KEY}"
+            "X-Api-Key": f"{config.API_INVOICE_KEY}"
         }
         response = requests.request("GET", url, headers=headers).json()
         was_used = response['used']

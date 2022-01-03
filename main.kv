@@ -2,6 +2,7 @@
 #:import FallOutTransition kivy.uix.screenmanager.FallOutTransition
 #:import SwapTransition kivy.uix.screenmanager.SwapTransition
 #:import FadeTransition kivy.uix.screenmanager.FadeTransition
+#:import VIDEO_PATH config.VIDEO_PATH
 
 MDBoxLayout:
     ScreenManager:
@@ -65,7 +66,7 @@ MDBoxLayout:
                     Video:
                         id: video_player
                         name: 'video_player'
-                        source: 'Sample.mp4'
+                        source: VIDEO_PATH
                         preview: 'videohintergrund.png'
                         options: {'allow_stretch': True}
                         #fullscreen: True
@@ -100,7 +101,6 @@ MDBoxLayout:
                         color: 1, 153/255, 0, 1
                         font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                         font_size: '150sp'
-                        #md_bg_color: 0, 1, 0, 0.5
                     MDBoxLayout:
                 MDBoxLayout:
                     MDLabel:
@@ -124,6 +124,7 @@ MDBoxLayout:
                 font_size: "31sp"
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
+                    infoscreenlayout.play_click_sound()
                     scrmanager.current = 'paymentscreen'
         MDScreen:
             id: paymentscreen
@@ -145,7 +146,6 @@ MDBoxLayout:
             PaymentBoxLayout:
                 id: paymentbox
                 MDBoxLayout:
-                    #md_bg_color: 0, 0, 0, 0.1
                     FloatLayout:
                         canvas:
                             Color:
@@ -158,7 +158,6 @@ MDBoxLayout:
                             size_hint: None, None
                             size: dp(450), dp(450)
                             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                            #md_bg_color: 0, 0, 0, 0.8
                             MDLabel:
                                 size_hint: 1, 1
                                 halign: 'center'
@@ -177,9 +176,7 @@ MDBoxLayout:
                             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 MDBoxLayout:
                     orientation: 'vertical'
-                    #md_bg_color: 0, 0, 0, 0.1
                     MDBoxLayout:
-                        #md_bg_color: 0, 0, 0, 0.1
                         orientation: 'vertical'
                         size_hint: 1, 1
                         MDLabel:
@@ -187,7 +184,6 @@ MDBoxLayout:
                             halign: 'center'
                             valign: 'bottom'
                             size_hint_x: 0.8
-                            #size_hint_y: 2
                             text_size: self.size
                             text: 'Wechselkurs:'
                             color: 1, 153/255, 0, 1
@@ -206,14 +202,12 @@ MDBoxLayout:
                             font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
                     MDBoxLayout:
                         orientation: 'vertical'
-                        #md_bg_color: 0, 0, 0, 0.1
                         size_hint: 1, 1
                         MDLabel:
                             id: headline_inserted_label
                             halign: 'center'
                             valign: 'bottom'
                             size_hint_x: 0.95
-                            #size_hint_y: 2
                             text_size: self.size
                             text: 'Bargeld eingezahlt:'
                             color: 1, 153/255, 0, 1
@@ -231,7 +225,6 @@ MDBoxLayout:
                             font_size: "29sp"
                             font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
                     MDBoxLayout:
-                        #md_bg_color: 0, 0, 0, 0.11
             MDFillRoundFlatButton:
                 text: '     Auszahlen     '
                 pos_hint: {'center_x': 0.75, 'center_y': 0.2}
@@ -240,13 +233,15 @@ MDBoxLayout:
                 font_size: "31sp"
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
+                    paymentbox.play_click_sound()
                     paymentbox.start_payment_process()
             MDFillRoundFlatButton:
-                text: '     Exit     '
+                text: '         Exit         '
                 pos_hint: {'center_x': 0.25, 'center_y': 0.2}
                 md_bg_color: 1, 153/255, 0, 1
                 text_color: 0.001, 0, 0, 1
                 font_size: "31sp"
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
+                    paymentbox.play_click_sound()
                     scrmanager.current = 'blackscreen'
