@@ -133,7 +133,7 @@ class PaymentBoxLayout(MDBoxLayout):
 
         Clock.schedule_once(self.update_price, 5)
 
-        self.biller = Biller('/dev/ttyACM0')
+        self.biller = Biller(config.BILLER_INTERFACE_PATH)
         Logger.debug(f"PaymentBoxLayout: instance of PaymentBoxLayout initialized - {datetime.now()}")
 
     def play_click_sound(self):
