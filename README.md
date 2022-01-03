@@ -40,7 +40,9 @@ sudo apt install pkg-config libgl1-mesa-dev libgles2-mesa-dev \
    libgstreamer1.0-dev \
    gstreamer1.0-plugins-{bad,base,good,ugly} \
    gstreamer1.0-{omx,alsa} libmtdev-dev \
-   xclip xsel libjpeg-dev
+   xclip xsel libjpeg-dev \
+   libgirepository1.0-dev \
+   libcairo2-dev
 ```
 #### Installation of special dependencies
 > Attention: You have to use different dependencies if you use ssh to work on your Pi. 
