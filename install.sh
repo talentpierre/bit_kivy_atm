@@ -9,6 +9,7 @@ git clone https://github.com/talentpierre/bit_kivy_atm.git
 git clone https://github.com/gmarull/nv9biller.git
 
 # 2. Virtual environment
+python3 -m pip install --upgrade pip setuptools virtualenv
 cd ~/venv
 python3 -m virtualenv kivy_venv
 cd $home
