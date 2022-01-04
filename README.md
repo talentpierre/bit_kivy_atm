@@ -57,6 +57,8 @@ sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
 ### 4. Kivy installation
 > Note: Make sure you are in your virtual environment --> normally `(kivy_env)` at the beginning of your line
+
+> Note: This step can take some time. Be patient.
 ```sh
 python -m pip install kivy[full] kivy_examples --no-binary kivy
 ````
@@ -70,7 +72,7 @@ python venv/kivy_venv/share/kivy-examples/demo/showcase/main.py
 cd ~/repos/bit_kivy_atm
 pip install -r requirements.txt
 ```
-### 7. NV9 USB + installation
+### 7. NV9USB+ installation
 ```sh
 cd ~/repos/nv9biller
 pip install .
@@ -82,6 +84,7 @@ cp -r ~/repos/nv9biller/nv9biller ~/repos/bit_kivy_atm/
 ```sh
 nano ~/repos/bit_kivy_atm/config.py
 ```
+> Note: The BILLER_INTERFACE_PATH could differ. You can plug in and unplug the NV9USB+ and look for the difference in `/dev/`
 #### Enter you credentials
 - create a `credential.py` and enter your credentials/url --> you can use `example.credentials.py`
 ```sh
