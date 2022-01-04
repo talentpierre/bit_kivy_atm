@@ -4,7 +4,7 @@ home="/home/pi/"
 # 1. Clone Repos
 cd $home
 mkdir repos venv
-cd ~/repos_1
+cd ~/repos
 git clone https://github.com/talentpierre/bit_kivy_atm.git
 git clone https://github.com/gmarull/nv9biller.git
 
