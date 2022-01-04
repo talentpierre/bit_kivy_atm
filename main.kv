@@ -2,8 +2,9 @@
 #:import FallOutTransition kivy.uix.screenmanager.FallOutTransition
 #:import SwapTransition kivy.uix.screenmanager.SwapTransition
 #:import FadeTransition kivy.uix.screenmanager.FadeTransition
+#:import VIDEO_PATH config.VIDEO_PATH
 
-MyMDBoxLayout:
+MDBoxLayout:
     ScreenManager:
         id: scrmanager
         transition: FadeTransition()
@@ -16,6 +17,39 @@ MyMDBoxLayout:
                     background_color: (1, 0, 0, 0)
                     background_normal: ''
                     on_press: scrmanager.current = 'videoscreen'
+        MDScreen:
+            id: supportscreen
+            name: 'supportscreen'
+            MDBoxLayout:
+                id: supportscreenlayout
+                md_bg_color: 0, 0, 0, 1
+                orientation: 'vertical'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
+                    MDLabel:
+                        id: supportheadinglabel
+                        halign: 'center'
+                        valign: 'bottom'
+                        text_size: self.size
+                        text: 'Achtung'
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                        font_size: '150sp'
+                        #md_bg_color: 0, 1, 0, 0.5
+                    MDBoxLayout:
+                MDBoxLayout:
+                    MDLabel:
+                        id: supporttextlabel
+                        halign: 'left'
+                        valign: 'center'
+                        size_hint_x: 0.5
+                        text_size: (self.width * 0.8, None)
+                        text: 'Etwas ist fehlgeschlagen.\nBitte kontaktieren Sie das Service-Personal.'
+                        color: 1, 153/255, 0, 1
+                        font_name: 'fonts/BRI293'
+                        font_size: '40sp'
+                MDBoxLayout:
+                    md_bg_color: 0, 0, 0, 1
         MDScreen:
             id: videoscreen
             name: 'videoscreen'
@@ -32,8 +66,7 @@ MyMDBoxLayout:
                     Video:
                         id: video_player
                         name: 'video_player'
-                        source: 'Sample.mp4'
-                        preview: 'videohintergrund.png'
+                        source: VIDEO_PATH
                         options: {'allow_stretch': True}
                         #fullscreen: True
                         #state: 'play'
@@ -67,7 +100,6 @@ MyMDBoxLayout:
                         color: 1, 153/255, 0, 1
                         font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                         font_size: '150sp'
-                        #md_bg_color: 0, 1, 0, 0.5
                     MDBoxLayout:
                 MDBoxLayout:
                     MDLabel:
@@ -91,6 +123,7 @@ MyMDBoxLayout:
                 font_size: "31sp"
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
+                    infoscreenlayout.play_click_sound()
                     scrmanager.current = 'paymentscreen'
         MDScreen:
             id: paymentscreen
@@ -112,7 +145,6 @@ MyMDBoxLayout:
             PaymentBoxLayout:
                 id: paymentbox
                 MDBoxLayout:
-                    #md_bg_color: 0, 0, 0, 0.1
                     FloatLayout:
                         canvas:
                             Color:
@@ -125,7 +157,6 @@ MyMDBoxLayout:
                             size_hint: None, None
                             size: dp(450), dp(450)
                             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-                            #md_bg_color: 0, 0, 0, 0.8
                             MDLabel:
                                 size_hint: 1, 1
                                 halign: 'center'
@@ -144,9 +175,7 @@ MyMDBoxLayout:
                             pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                 MDBoxLayout:
                     orientation: 'vertical'
-                    #md_bg_color: 0, 0, 0, 0.1
                     MDBoxLayout:
-                        #md_bg_color: 0, 0, 0, 0.1
                         orientation: 'vertical'
                         size_hint: 1, 1
                         MDLabel:
@@ -154,7 +183,6 @@ MyMDBoxLayout:
                             halign: 'center'
                             valign: 'bottom'
                             size_hint_x: 0.8
-                            #size_hint_y: 2
                             text_size: self.size
                             text: 'Wechselkurs:'
                             color: 1, 153/255, 0, 1
@@ -173,14 +201,12 @@ MyMDBoxLayout:
                             font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
                     MDBoxLayout:
                         orientation: 'vertical'
-                        #md_bg_color: 0, 0, 0, 0.1
                         size_hint: 1, 1
                         MDLabel:
                             id: headline_inserted_label
                             halign: 'center'
                             valign: 'bottom'
                             size_hint_x: 0.95
-                            #size_hint_y: 2
                             text_size: self.size
                             text: 'Bargeld eingezahlt:'
                             color: 1, 153/255, 0, 1
@@ -198,7 +224,6 @@ MyMDBoxLayout:
                             font_size: "29sp"
                             font_name: 'fonts/PlayfairDisplayRegular-ywLOY'
                     MDBoxLayout:
-                        #md_bg_color: 0, 0, 0, 0.11
             MDFillRoundFlatButton:
                 text: '     Auszahlen     '
                 pos_hint: {'center_x': 0.75, 'center_y': 0.2}
@@ -207,4 +232,15 @@ MyMDBoxLayout:
                 font_size: "31sp"
                 font_name: 'fonts/PlayfairDisplayBold-nRv8g'
                 on_release:
+                    paymentbox.play_click_sound()
                     paymentbox.start_payment_process()
+            MDFillRoundFlatButton:
+                text: '         Exit         '
+                pos_hint: {'center_x': 0.25, 'center_y': 0.2}
+                md_bg_color: 1, 153/255, 0, 1
+                text_color: 0.001, 0, 0, 1
+                font_size: "31sp"
+                font_name: 'fonts/PlayfairDisplayBold-nRv8g'
+                on_release:
+                    paymentbox.play_click_sound()
+                    scrmanager.current = 'blackscreen'
