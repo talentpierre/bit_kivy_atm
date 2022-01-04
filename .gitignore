@@ -4,7 +4,12 @@ credentials.py
 #media files
 *.png
 *.mp4
+*.wav
+*.mp3
 
 #python stuff
 __pycache__/
 .idea
+
+#other repos
+nv9biller/
