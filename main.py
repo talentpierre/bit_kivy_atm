@@ -2,6 +2,7 @@ import os
 os.environ['KIVY_VIDEO'] = 'ffpyplayer'
 os.environ['KIVY_AUDIO'] = 'sdl2'
 
+import importlib
 import logging
 import pyautogui
 import pyautogui as pyautogui
@@ -10,7 +11,6 @@ import requests
 import time
 
 from datetime import datetime
-from functools import partial
 
 import kivy
 from kivy.clock import Clock
@@ -130,6 +130,9 @@ class PaymentBoxLayout(MDBoxLayout):
         self.satprice = 0
         self.price = ''
         self.inserted_value = f"{self.fiat:.2f} Euro"
+        self.start_time = 0
+        self.payment_provider = importlib.import_module(f"paymentprovider.{config.PAYMENT_PROVIDER}", '.')
+        self.price_provider = importlib.import_module(f"priceprovider.{config.PRICE_PROVIDER}", ".")
 
         Clock.schedule_once(self.update_price, 5)
 
@@ -145,10 +148,11 @@ class PaymentBoxLayout(MDBoxLayout):
     def set_prices(self):
         '''It gets the bitcoin price and sets the price variables.'''
         try:
-            self.btcprice = float(requests.get('https://api.opennode.co/v1/rates').json()['data']['BTCEUR']['EUR'])
-        except:
+            self.btcprice = self.price_provider.get_btc_price()
+        except Exception as e:
             MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
             Logger.critical(f"PaymentBoxLayout: set_prices - exchange rate error - {datetime.now()}")
+            Logger.critical(f"{e}")
         else:
             self.satprice = self.btcprice / 100_000_000
             self.price = f"{round(self.satprice * self.fee * 10_000, 2):.2f} Cent/100Sats \n{round(self.btcprice * self.fee, 2):.2f} Euro/bitcoin"
@@ -163,16 +167,16 @@ class PaymentBoxLayout(MDBoxLayout):
         events = self.biller.poll()
         for event in events:
             Logger.debug(f"PaymentBoxLayout: update_fiat_input - event {str(event)} - {datetime.now()}")
-            if('Credit -> 5.00' in str(event)):
+            if 'Credit -> 5.00' in str(event):
                 self.fiat += 5
                 Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
-            if('Credit ->10.00' in str(event)):
+            if 'Credit ->10.00' in str(event):
                 self.fiat += 10
                 Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat  {self.fiat} - {datetime.now()}")
-            if('Credit -> 20.00' in str(event)):
+            if 'Credit -> 20.00' in str(event):
                 self.fiat += 20
                 Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
-            if('Credit -> 50.00' in str(event)):
+            if 'Credit -> 50.00' in str(event):
                 self.fiat += 50
                 Logger.info(f"PaymentBoxLayout: update_fiat_input - fiat {self.fiat} - {datetime.now()}")
 
@@ -194,7 +198,7 @@ class PaymentBoxLayout(MDBoxLayout):
         Logger.debug(f"PaymentBoxLayout: start_clock - {datetime.now()}")
 
 #        for testing if cash acceptor is not available
-#        self.test_fiat_change_event = Clock.schedule_once(self.test_fiat_change, 15)
+#        self.test_fiat_change_event = Clock.schedule_once(self.test_fiat_change, 5)
 
     def stop_clock(self):
         '''The method stops several update timer.'''
@@ -215,63 +219,39 @@ class PaymentBoxLayout(MDBoxLayout):
             self.fiat = 0
             amount = int(round(fiat / self.satprice))
             Logger.info(f"PaymentBoxLayout: start_payment_process - withdraw initiated - sats {amount} - {datetime.now()}")
-            title = 'bit_lightning_atm'
             try:
-                lnurl, withdraw_id = self.get_new_payreq_information(amount, title)
-            except:
+                lnurl = self.payment_provider.get_new_payreq_information(amount)
+            except Exception as e:
                 MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
                 Logger.critical(f"PaymentBoxLayout: start_payment_process - payrequest error - {datetime.now()}")
+                Logger.critical(f"{e}")
             else:
                 self.show_qr_code(lnurl)
-                self.check_payment_event = Clock.schedule_interval(partial(self.withdraw_used, withdraw_id), 1)
+                self.check_payment_event = Clock.schedule_interval(self.withdraw_used, 1)
+                self.start_time = time.time()
 
-    def get_new_payreq_information(self, amount, title):
-        '''It requests a withdraw link and returns its details.'''
-        url = f"{config.API_URL}/withdraw/api/v1/links"
-        payload = {
-            "title": title,
-            "min_withdrawable": amount,
-            "max_withdrawable": amount,
-            "uses": 1,
-            "wait_time": 1,
-            "is_unique": True
-        }
-        headers = {
-            "Content-Type": "application/json",
-            "X-Api-Key": f"{config.API_ADMIN_KEY}"
-        }
-        response = requests.request("POST", url, json=payload, headers=headers).json()
-        lnurl = response['lnurl']
-        withdraw_id = response['id']
-        return lnurl, withdraw_id
-
-    def get_payment_status(self, withdraw_id):
-        '''It requests the paymentstatus.'''
-        url = f"{config.API_URL}/withdraw/api/v1/links/{withdraw_id}"
-        headers = {
-            "Content-Type": "application/json",
-            "X-Api-Key": f"{config.API_INVOICE_KEY}"
-        }
-        response = requests.request("GET", url, headers=headers).json()
-        was_used = response['used']
-        return was_used
-
-    def withdraw_used(self, withdraw_id, _):
+    def withdraw_used(self, _):
         '''The method is called by a timer and checks the payment status.'''
         try:
-            was_used = self.get_payment_status(withdraw_id)
-        except:
+            was_used = self.payment_provider.get_payment_status()
+        except Exception as e:
             self.check_payment_event.cancel()
             MDApp.get_running_app().root.ids.scrmanager.current = 'supportscreen'
             Logger.critical(f"PaymentBoxLayout: withdraw_used - payment status error - {datetime.now()}")
+            Logger.critical(f"{e}")
         else:
-            if was_used:
+            payment_time_is_too_long = time.time() > self.start_time + config.WAITING_TIME
+            if was_used or payment_time_is_too_long:
                 self.check_payment_event.cancel()
                 self.stop_clock()
                 MDApp.get_running_app().root.ids.image_id.opacity = 0
-                self.information_label = 'Vielen Dank und \nbis bald.'
+                if payment_time_is_too_long:
+                    self.information_label = 'Payment \nfehlgeschlagen'
+                    Logger.warning(f"PaymentBoxLayout: withdraw_used - payment time too long - {datetime.now()}")
+                else:
+                    self.information_label = 'Vielen Dank und \nbis bald.'
+                    Logger.info(f"PaymentBoxLayout: withdraw_used - withdraw link was used - {datetime.now()}")
                 Clock.schedule_once(self.payment_done, 5)
-                Logger.info(f"PaymentBoxLayout: withdraw_used - withdraw link was used - {datetime.now()}")
 
     def payment_done(self, _):
         '''The method is called after the payment was payed and switches back to the video screen.'''
